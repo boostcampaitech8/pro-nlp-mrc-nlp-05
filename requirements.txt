@@ -1,0 +1,31 @@
+cat <<EOF > requirements.txt
+llama-index
+langchain
+langchain-community
+# adalflow[ollama]
+# mlflow
+llama-cpp-python[server]
+unsloth
+unsloth_zoo
+transformers
+datasets
+sentence-transformers
+jedi>=0.16
+autogen
+autogen-agentchat
+llama-index-llms-llama-cpp
+llama-index-llms-openai
+llama-index-llms-upstage
+llama-index-embeddings-huggingface
+llama-index-embeddings-upstage
+llama-index-retrievers-bm25
+llama-index-readers-wikipedia
+llama-index-readers-file
+llama-index-graph-stores-neo4j
+llama-index-vector-stores-neo4jvector
+# ollama
+neo4j
+SPARQLWrapper
+wikipedia
+wikipedia-api
+EOF
