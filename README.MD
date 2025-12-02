@@ -9,11 +9,6 @@ cd pro-nlp-mrc-nlp-05
 
 # 브랜치 이동
 git checkout setup/initial-environ
-# 또는
-git switch setup/initial-environ
-
-# 코드 받기
-git pull
 
 # 1. 실행 권한 부여
 chmod +x setup.sh
