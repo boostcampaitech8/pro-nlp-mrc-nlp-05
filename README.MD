@@ -1,4 +1,5 @@
 # 깃 설치
+apt-get update
 apt-get install git
 
 # 깃 clone
