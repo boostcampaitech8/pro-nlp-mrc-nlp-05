@@ -1,5 +1,6 @@
-# 깃 설치
+# apt-get 업데이트
 apt-get update
+# 깃 설치
 apt-get install git
 
 # 깃 clone
