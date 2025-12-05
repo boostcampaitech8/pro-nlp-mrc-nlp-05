@@ -309,17 +309,29 @@ class KiwiBM25Retriever(BaseRetriever):
 
 tag_include=['NNG', 'NNP', 'NNB', 'NR', 'VV', 'VA', 'MM', 'XR', 'SW', 'SL', 'SH', 'SN', 'SB']
 
-# my_tokenizer = partial(
-#     tokenize_kiwi_nbest,
-#     kiwi=kiwi,
-#     tag_include=tag_include,
-#     score_threshold=1.05,
-# )
+corpus_tokenizer = partial(
+    tokenize_kiwi,
+    kiwi=kiwi,
+    tag_include=tag_include,
+    text_type="corpus",
+    top_n=2,
+    score_threshold=1.2,
+)
+
+query_tokenizer = partial(
+    tokenize_kiwi,
+    kiwi=kiwi,
+    tag_include=tag_include,
+    text_type="query",
+    top_n=3,
+    score_threshold=1.2,
+)
 
 kiwi_bm25_retriever = KiwiBM25Retriever(
     nodes=nodes,
     similarity_top_k=30,
-    tokenizer=my_tokenizer,
+    corpus_tokenizer=corpus_tokenizer,
+    query_tokenizer=query_tokenizer
 )
 
 print("키위 세팅 끝")
@@ -334,20 +346,18 @@ fusion_retriever = QueryFusionRetriever(
 print("퓨전 리트리버 끝")
 
 
-test_set_dir = "/data/ephemeral/home/data/test_dataset/"
-test_dataset = load_from_disk(test_set_dir)
+train_set_dir = "/data/ephemeral/home/data/train_dataset"
+train_dataset = load_from_disk(train_set_dir)
 
-
-###
 import tqdm
 
 result_for_test = []
 
-for i in tqdm.tqdm(range(len(test_dataset['validation']['question']))):
+for i in tqdm.tqdm(range(len(train_dataset['train']['question']))):
 
     # 질문과 id
-    test_q_query = test_dataset['validation'][i]['question']
-    test_q_id = test_dataset['validation'][i]['id']
+    test_q_query = train_dataset['train'][i]['question']
+    test_q_id = train_dataset['train'][i]['id']
 
     # 골든리트리버 귀엽다
     retrieved_nodes_test = fusion_retriever.retrieve(test_q_query)
@@ -377,7 +387,7 @@ def convert_to_json(data):
 
 json_test = convert_to_json(result_for_test)
 
+file_path = '/data/ephemeral/home/pro-nlp-mrc-nlp-05/document/train_kiwi_hybrid.json'
 
-file_path = './document_list/test_jj.json'
 with open(file_path, 'w') as f:
     json.dump(json_test, f)
