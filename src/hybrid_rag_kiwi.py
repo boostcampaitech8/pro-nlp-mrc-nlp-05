@@ -230,8 +230,9 @@ class KiwiBM25Retriever(BaseRetriever):
     def __init__(
         self,
         nodes: List[BaseNode],
-        similarity_top_k: int = 30,
-        corpus_tokenizer: Optional[Callable[[str], List[str]]] = None,
+        similarity_top_k: int,
+        corpus_tokenizer: Optional[Callable[[str], List[str]]],
+        query_tokenizer: Optional[Callable[[str], List[str]]]
     ) -> None:
         self._nodes = nodes
         self._similarity_top_k = similarity_top_k
@@ -240,11 +241,14 @@ class KiwiBM25Retriever(BaseRetriever):
         if corpus_tokenizer is None:
             kiwi = Kiwi()
             self._tokenizer = lambda text: [f'{t.form}/{t.tag}' for t in kiwi.tokenize(text)]
-        else:
-            self._tokenizer = corpus_tokenizer
-
+        if query_tokenizer is None:
+            query_tokenizer = corpus_tokenizer
+        
+        self._corpus_tokenizer = corpus_tokenizer
+        self._query_tokenizer = query_tokenizer
+        
         # 코퍼스 토크나이징 → index
-        corpus_tokens = [self._tokenizer(node.text) for node in nodes]
+        corpus_tokens = [self._corpus_tokenizer(node.text) for node in nodes]
         self._bm25 = bm25s.BM25()
         self._bm25.index(corpus_tokens)
 
@@ -252,7 +256,7 @@ class KiwiBM25Retriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         query = query_bundle.query_str
-        tokenized_query = [self._tokenizer(query)]
+        tokenized_query = [self._query_tokenizer(query)]
 
         '''
         results, scores shape = (쿼리 개수, k)
