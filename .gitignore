@@ -1,7 +1,6 @@
 __pycache__
 .idea
 
-# 가상환경
 .venv
 
 .cache

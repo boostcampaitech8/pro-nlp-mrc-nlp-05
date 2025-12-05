@@ -15,7 +15,7 @@ from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.vector_stores.faiss import FaissVectorStore
 import faiss
 
-print("ì‹œì‘!")
+print("½ÃÀÛ!")
 HF_TOKEN = "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"
 os.environ["HUGGINGFACE_HUB_TOKEN"] = HF_TOKEN 
 login(token=HF_TOKEN)
@@ -31,16 +31,16 @@ train_set_dir = "/data/ephemeral/home/data/train_dataset/"
 dataset = load_from_disk(train_set_dir)
 
 
-# --- ëª¨ë¸ ë¡œë“œ ì„¤ì • ---
-GEMMA_MODEL_NAME = "google/gemma-3-4b-it"  # ë©”ëª¨ë¦¬ íš¨ìœ¨ì„±ì„ ìœ„í•´ 4b ëŒ€ì‹  9bë¥¼ ì˜ˆì‹œë¡œ ì‚¬ìš© (ì‚¬ìš©ì í™˜ê²½ì— ë”°ë¼ ë³€ê²½ ê°€ëŠ¥)
+# --- ¸ğµ¨ ·Îµå ¼³Á¤ ---
+GEMMA_MODEL_NAME = "google/gemma-3-4b-it"  # ¸Ş¸ğ¸® È¿À²¼ºÀ» À§ÇØ 4b ´ë½Å 9b¸¦ ¿¹½Ã·Î »ç¿ë (»ç¿ëÀÚ È¯°æ¿¡ µû¶ó º¯°æ °¡´É)
 EMBEDDING_MODEL_NAME = "BAAI/bge-m3"
 RERANKER_MODEL_NAME = "BAAI/bge-reranker-v2-m3"
 
-# --- LLM ë° Tokenizer ë¡œë“œ ---
+# --- LLM ¹× Tokenizer ·Îµå ---
 def load_gemma():
-    """Gemma ëª¨ë¸ê³¼ í† í¬ë‚˜ì´ì €ë¥¼ ë¡œë“œí•©ë‹ˆë‹¤."""
-    # Q: Gemma 3-4b-it ì‚¬ìš© ì˜ˆì •ì´ì—ˆëŠ”ë°, í˜„ì¬ëŠ” Gemma 2-9b-itì„ ì‚¬ìš©í•˜ë ¤ í•©ë‹ˆë‹¤.
-    # A: VRAM ìƒí™©ì— ë”°ë¼ ëª¨ë¸ ì´ë¦„ì„ ì ì ˆíˆ ë³€ê²½í•˜ì—¬ ì‚¬ìš©í•˜ì„¸ìš”.
+    """Gemma ¸ğµ¨°ú ÅäÅ©³ªÀÌÀú¸¦ ·ÎµåÇÕ´Ï´Ù."""
+    # Q: Gemma 3-4b-it »ç¿ë ¿¹Á¤ÀÌ¾ú´Âµ¥, ÇöÀç´Â Gemma 2-9b-itÀ» »ç¿ëÇÏ·Á ÇÕ´Ï´Ù.
+    # A: VRAM »óÈ²¿¡ µû¶ó ¸ğµ¨ ÀÌ¸§À» ÀûÀıÈ÷ º¯°æÇÏ¿© »ç¿ëÇÏ¼¼¿ä.
     tokenizer = AutoTokenizer.from_pretrained(GEMMA_MODEL_NAME)
     model = AutoModelForCausalLM.from_pretrained(
         GEMMA_MODEL_NAME,
@@ -51,7 +51,7 @@ def load_gemma():
 
 documents: List[Document] = []
 for doc_id, data in wiki_data.items():
-    # 'text' í•„ë“œë¥¼ ë¬¸ì„œ ë‚´ìš©ìœ¼ë¡œ ì‚¬ìš©
+    # 'text' ÇÊµå¸¦ ¹®¼­ ³»¿ëÀ¸·Î »ç¿ë
     documents.append(
         Document(
             text=data['text'],
@@ -63,17 +63,17 @@ for doc_id, data in wiki_data.items():
         )
     )
     
-# 3. ë¬¸ì„œ ì²­í‚¹ (Node ìƒì„±)
-# SentenceSplitterëŠ” ë¬¸ì¥ ë‹¨ìœ„ ë¶„í• ì„ ê¸°ë³¸ìœ¼ë¡œ í•˜ë©´ì„œ, 
-# ìµœì¢… ì²­í¬ í¬ê¸°ë¥¼ chunk_size=512ë¡œ ì œí•œí•©ë‹ˆë‹¤.
+# 3. ¹®¼­ Ã»Å· (Node »ı¼º)
+# SentenceSplitter´Â ¹®Àå ´ÜÀ§ ºĞÇÒÀ» ±âº»À¸·Î ÇÏ¸é¼­, 
+# ÃÖÁ¾ Ã»Å© Å©±â¸¦ chunk_size=512·Î Á¦ÇÑÇÕ´Ï´Ù.
 splitter = SentenceSplitter(chunk_size=512, chunk_overlap=50)
 
-# nodesì—ëŠ” ì‘ì€ í…ìŠ¤íŠ¸ ì²­í¬(TextNode)ë“¤ì´ ë¦¬ìŠ¤íŠ¸ í˜•íƒœë¡œ ë‹´ê¹ë‹ˆë‹¤.
+# nodes¿¡´Â ÀÛÀº ÅØ½ºÆ® Ã»Å©(TextNode)µéÀÌ ¸®½ºÆ® ÇüÅÂ·Î ´ã±é´Ï´Ù.
 nodes: List[TextNode] = splitter.get_nodes_from_documents(documents)
 
-print(f"ì›ë³¸ ë¬¸ì„œ ê°œìˆ˜: {len(documents)}ê°œ")
-print(f"ìƒì„±ëœ ì²­í¬(Node) ê°œìˆ˜: {len(nodes)}ê°œ")
-print(f"ì²« ë²ˆì§¸ ì²­í¬ í…ìŠ¤íŠ¸ ì˜ˆì‹œ: {nodes[0].get_content()[:100]}...")
+print(f"¿øº» ¹®¼­ °³¼ö: {len(documents)}°³")
+print(f"»ı¼ºµÈ Ã»Å©(Node) °³¼ö: {len(nodes)}°³")
+print(f"Ã¹ ¹øÂ° Ã»Å© ÅØ½ºÆ® ¿¹½Ã: {nodes[0].get_content()[:100]}...")
 
 print(torch.cuda.is_available())
 
@@ -84,20 +84,20 @@ embed_model = HuggingFaceEmbedding(
 
 # faiss vs
 
-dummy_emb = embed_model.get_text_embedding("dim ì²´í¬ìš©")
+dummy_emb = embed_model.get_text_embedding("dim Ã¼Å©¿ë")
 dim = len(dummy_emb)
 faiss_index = faiss.IndexFlatIP(dim) 
 vector_store = FaissVectorStore(faiss_index=faiss_index)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-print("VectorStoreIndex ì‹œì‘")
+print("VectorStoreIndex ½ÃÀÛ")
 vector_index = VectorStoreIndex(
     nodes,
     storage_context=storage_context,
     embed_model=embed_model,
 )
-print("ë")
-# --- 3. Reranker (ì‚¬ìš©ì ì •ì˜) ---
+print("³¡")
+# --- 3. Reranker (»ç¿ëÀÚ Á¤ÀÇ) ---
 from sentence_transformers import CrossEncoder 
 
 class Reranker:
@@ -106,7 +106,7 @@ class Reranker:
 
     def rerank(self, query: str, docs: List[Dict], doc_id, top_k: int = 5) -> List[Dict]:
         """
-        queryì™€ docs[{'text': ..., ...}]ë¥¼ ë°›ì•„, score ê¸°ì¤€ìœ¼ë¡œ ë‹¤ì‹œ ì •ë ¬í•´ì„œ top_kë§Œ ë°˜í™˜í•©ë‹ˆë‹¤.
+        query¿Í docs[{'text': ..., ...}]¸¦ ¹Ş¾Æ, score ±âÁØÀ¸·Î ´Ù½Ã Á¤·ÄÇØ¼­ top_k¸¸ ¹İÈ¯ÇÕ´Ï´Ù.
         """
         if not docs:
             return []
@@ -124,62 +124,75 @@ class Reranker:
     
 reranker = Reranker()
 
-print("llm setting ì‹œì‘")
+print("llm setting ½ÃÀÛ")
 tokenizer, model = load_gemma()
 gemma_llm = HuggingFaceLLM(
-    # model_nameì„ ì§€ì •í•  í•„ìš”ê°€ ì—†ê±°ë‚˜, ëª…ì‹œì ìœ¼ë¡œ ì§€ì •í•´ë„ model/tokenizer ì¸ìê°€ ìš°ì„ ë©ë‹ˆë‹¤.
-    model=model,        # ì´ë¯¸ ë¡œë“œëœ PyTorch ëª¨ë¸ ê°ì²´
-    tokenizer=tokenizer,  # ì´ë¯¸ ë¡œë“œëœ Tokenizer ê°ì²´
+    # model_nameÀ» ÁöÁ¤ÇÒ ÇÊ¿ä°¡ ¾ø°Å³ª, ¸í½ÃÀûÀ¸·Î ÁöÁ¤ÇØµµ model/tokenizer ÀÎÀÚ°¡ ¿ì¼±µË´Ï´Ù.
+    model=model,        # ÀÌ¹Ì ·ÎµåµÈ PyTorch ¸ğµ¨ °´Ã¼
+    tokenizer=tokenizer,  # ÀÌ¹Ì ·ÎµåµÈ Tokenizer °´Ã¼
     #device="cuda" if torch.cuda.is_available() else "cpu",
-    # device_map="auto" ë“±ì€ ì´ë¯¸ model ë¡œë“œ ì‹œ ì ìš©ë˜ì—ˆìœ¼ë¯€ë¡œ LlamaIndex LLMì—ì„œëŠ” ë¶ˆí•„ìš”
+    # device_map="auto" µîÀº ÀÌ¹Ì model ·Îµå ½Ã Àû¿ëµÇ¾úÀ¸¹Ç·Î LlamaIndex LLM¿¡¼­´Â ºÒÇÊ¿ä
     
-    # í…œí”Œë¦¿ ì²˜ë¦¬ ë°©ì‹ ë“± LlamaIndex ê´€ë ¨ ì„¤ì •ë§Œ ì¶”ê°€
-    context_window=8192, # ì˜ˆì‹œ: Gemmaì˜ Context Window ì„¤ì • (í•„ìš”ì— ë”°ë¼)
+    # ÅÛÇÃ¸´ Ã³¸® ¹æ½Ä µî LlamaIndex °ü·Ã ¼³Á¤¸¸ Ãß°¡
+    context_window=8192, # ¿¹½Ã: GemmaÀÇ Context Window ¼³Á¤ (ÇÊ¿ä¿¡ µû¶ó)
 )
 
-# 3. LlamaIndex ì„¤ì •ì— ì ìš©
+# 3. LlamaIndex ¼³Á¤¿¡ Àû¿ë
 Settings.llm = gemma_llm
-print("llm setting ë")
+print("llm setting ³¡")
 
 retriever = vector_index.as_retriever(similarity_top_k=50)
 
 
-print("í‚¤ìœ„ ì„¸íŒ… ì‹œì‘")
+print("Å°À§ ¼¼ÆÃ ½ÃÀÛ")
 from functools import partial
 from kiwipiepy import Kiwi
 
 kiwi = Kiwi()
 
-def tokenize_kiwi_nbest(
+def tokenize_kiwi(
     text: str,
     kiwi: Kiwi,
     tag_include: List[str],
-    score_threshold: float = 1.05
+    text_type: str,
+    top_n: int,
+    score_threshold: float = 1.05,
 ) -> list[str]:
     try:
-        analyzed = kiwi.analyze(text, top_n=2 + len(text) // 200)  # [[(ë¶„ì„ê²°ê³¼1, ì ìˆ˜), (ë¶„ì„ê²°ê³¼2, ì ìˆ˜), ... ]]
+        # ÅäÅ«È­ÇÒ ÅØ½ºÆ®°¡ ¹®¼­ÀÏ ¶§
+        if text_type == "corpus":
+            analyzed = kiwi.analyze(text, top_n=top_n + len(text) // 200)  # [[(ºĞ¼®°á°ú1, Á¡¼ö), (ºĞ¼®°á°ú2, Á¡¼ö), ... ]]
 
-        # ë¶„ì„ ê²°ê³¼ê°€ ë¹„ì–´ìˆê±°ë‚˜ í† í°ì´ ì—†ëŠ” ê²½ìš°
-        if not analyzed or not analyzed[0][0]:
-            return _fallback_tokenize(text)
+            # ºĞ¼® °á°ú°¡ ºñ¾îÀÖ°Å³ª ÅäÅ«ÀÌ ¾ø´Â °æ¿ì
+            if not analyzed:
+                return _fallback_tokenize(text)
+            
+            num_candi = 1
+            # 1À§ Á¡¼ö ±âÁØ threshold ÀÌ³»ÀÇ Á¡¼öÀÌ¸é num_candi += 1
+            while (
+                num_candi < len(analyzed)
+                and analyzed[num_candi][1] > score_threshold * analyzed[0][1]
+            ):
+                num_candi += 1
+                
+        # ÅäÅ«È­ÇÒ ÅØ½ºÆ®°¡ Äõ¸®ÀÏ ¶§
+        elif text_type == "query":
+            analyzed = kiwi.analyze(text, top_n=top_n) 
 
-        # ìµœì¢… í›„ë³´ ê°œìˆ˜ ê²°ì •
-        num_candi = 1
-        # 1ìœ„ ì ìˆ˜ ê¸°ì¤€ threshold ì´ë‚´ì˜ ì ìˆ˜ì´ë©´ num_candi += 1
-        while (
-            num_candi < len(analyzed)
-            and analyzed[num_candi][1] > score_threshold * analyzed[0][1]
-        ):
-            num_candi += 1
+            # ºĞ¼® °á°ú°¡ ºñ¾îÀÖ°Å³ª ÅäÅ«ÀÌ ¾ø´Â °æ¿ì
+            if not analyzed:
+                return _fallback_tokenize(text)
+            
+            num_candi = 3
 
-        # ëª¨ë“  í›„ë³´ì˜ (form, tag) ë¦¬ìŠ¤íŠ¸
+        # ¸ğµç ÈÄº¸ÀÇ (form, tag) ¸®½ºÆ®
         all_tokenized = [
             (t.form, t.tag)
             for nc in range(num_candi)
             for t in analyzed[nc][0]
         ]
 
-        # ì¤‘ë³µì œê±°
+        # Áßº¹Á¦°Å
         unique_tokenized = set(all_tokenized)
 
         filtered = [
@@ -192,14 +205,17 @@ def tokenize_kiwi_nbest(
     
     except Exception:
         return _fallback_tokenize(text)
-
+    
 
 def _fallback_tokenize(text: str) -> list[str]:
-    """Kiwi ì‹¤íŒ¨ ì‹œ ë‹¨ìˆœ whitespace + ë¬¸ì ê¸°ë°˜ í† í°í™”"""
+    """Kiwi ½ÇÆĞ ½Ã ´Ü¼ø whitespace + ¹®ÀÚ ±â¹İ ÅäÅ«È­"""
     import re
-    # ê³µë°± ë¶„ë¦¬ + ì•ŒíŒŒë²³/ìˆ«ì/ê¸°íƒ€ ìœ ë‹ˆì½”ë“œ ë‹¨ì–´ ì¶”ì¶œ
+    # °ø¹é ºĞ¸® + ¾ËÆÄºª/¼ıÀÚ/±âÅ¸ À¯´ÏÄÚµå ´Ü¾î ÃßÃâ
     tokens = re.findall(r'\b\w+\b', text, re.UNICODE)
     return [t for t in tokens]
+
+
+
 
 from typing import List, Optional, Callable
 import bm25s
@@ -209,25 +225,25 @@ from kiwipiepy import Kiwi
 import json
 
 class KiwiBM25Retriever(BaseRetriever):
-    """Kiwipiepy í† í¬ë‚˜ì´ì €ë¥¼ ì‚¬ìš©í•˜ëŠ” í•œêµ­ì–´ BM25 Retriever (bm25s ê¸°ë°˜)"""
+    """Kiwipiepy ÅäÅ©³ªÀÌÀú¸¦ »ç¿ëÇÏ´Â ÇÑ±¹¾î BM25 Retriever (bm25s ±â¹İ)"""
 
     def __init__(
         self,
         nodes: List[BaseNode],
         similarity_top_k: int = 30,
-        tokenizer: Optional[Callable[[str], List[str]]] = None,
+        corpus_tokenizer: Optional[Callable[[str], List[str]]] = None,
     ) -> None:
         self._nodes = nodes
         self._similarity_top_k = similarity_top_k
 
-        # tokenizerê°€ ì—†ìœ¼ë©´ ê¸°ë³¸ Kiwi tokenizer ì‚¬ìš©
-        if tokenizer is None:
+        # tokenizer°¡ ¾øÀ¸¸é ±âº» Kiwi tokenizer »ç¿ë
+        if corpus_tokenizer is None:
             kiwi = Kiwi()
             self._tokenizer = lambda text: [f'{t.form}/{t.tag}' for t in kiwi.tokenize(text)]
         else:
-            self._tokenizer = tokenizer
+            self._tokenizer = corpus_tokenizer
 
-        # ì½”í¼ìŠ¤ í† í¬ë‚˜ì´ì§• â†’ index
+        # ÄÚÆÛ½º ÅäÅ©³ªÀÌÂ¡ ¡æ index
         corpus_tokens = [self._tokenizer(node.text) for node in nodes]
         self._bm25 = bm25s.BM25()
         self._bm25.index(corpus_tokens)
@@ -239,16 +255,16 @@ class KiwiBM25Retriever(BaseRetriever):
         tokenized_query = [self._tokenizer(query)]
 
         '''
-        results, scores shape = (ì¿¼ë¦¬ ê°œìˆ˜, k)
-        results[0] = ì²«ë²ˆì§¸ ì¿¼ë¦¬ì˜ top-k ë¬¸ì„œì˜ ì¸ë±ìŠ¤ ë²ˆí˜¸ (idx)
-        scores[0] = ì²«ë²ˆì§¸ ì¿¼ë¦¬ì˜ BM25 ì ìˆ˜
+        results, scores shape = (Äõ¸® °³¼ö, k)
+        results[0] = Ã¹¹øÂ° Äõ¸®ÀÇ top-k ¹®¼­ÀÇ ÀÎµ¦½º ¹øÈ£ (idx)
+        scores[0] = Ã¹¹øÂ° Äõ¸®ÀÇ BM25 Á¡¼ö
         '''
         results, scores = self._bm25.retrieve(
             tokenized_query,
             k=self._similarity_top_k
         )
 
-        nodes_with_scores: List[NodeWithScore] = []  # ë°˜ë“œì‹œ _retrieveëŠ” List[NodeWithScore]ì´ ë°˜í™˜íƒ€ì…ì´ì–´ì•¼í•¨
+        nodes_with_scores: List[NodeWithScore] = []  # ¹İµå½Ã _retrieve´Â List[NodeWithScore]ÀÌ ¹İÈ¯Å¸ÀÔÀÌ¾î¾ßÇÔ
         for idx, score in zip(results[0], scores[0]):
             if score > 0:
                 nodes_with_scores.append(
@@ -289,12 +305,12 @@ class KiwiBM25Retriever(BaseRetriever):
 
 tag_include=['NNG', 'NNP', 'NNB', 'NR', 'VV', 'VA', 'MM', 'XR', 'SW', 'SL', 'SH', 'SN', 'SB']
 
-my_tokenizer = partial(
-    tokenize_kiwi_nbest,
-    kiwi=kiwi,
-    tag_include=tag_include,
-    score_threshold=1.05,
-)
+# my_tokenizer = partial(
+#     tokenize_kiwi_nbest,
+#     kiwi=kiwi,
+#     tag_include=tag_include,
+#     score_threshold=1.05,
+# )
 
 kiwi_bm25_retriever = KiwiBM25Retriever(
     nodes=nodes,
@@ -302,16 +318,16 @@ kiwi_bm25_retriever = KiwiBM25Retriever(
     tokenizer=my_tokenizer,
 )
 
-print("í‚¤ìœ„ ì„¸íŒ… ë")
+print("Å°À§ ¼¼ÆÃ ³¡")
 
-print("í“¨ì „ ë¦¬íŠ¸ë¦¬ë²„ ì‹œì‘")
+print("Ç»Àü ¸®Æ®¸®¹ö ½ÃÀÛ")
 fusion_retriever = QueryFusionRetriever(
     retrievers=[retriever, kiwi_bm25_retriever],
     similarity_top_k=30,  
     num_queries=1,
     use_async=False,mode="reciprocal_rerank"
 )
-print("í“¨ì „ ë¦¬íŠ¸ë¦¬ë²„ ë")
+print("Ç»Àü ¸®Æ®¸®¹ö ³¡")
 
 
 test_set_dir = "/data/ephemeral/home/data/test_dataset/"
@@ -325,11 +341,11 @@ result_for_test = []
 
 for i in tqdm.tqdm(range(len(test_dataset['validation']['question']))):
 
-    # ì§ˆë¬¸ê³¼ id
+    # Áú¹®°ú id
     test_q_query = test_dataset['validation'][i]['question']
     test_q_id = test_dataset['validation'][i]['id']
 
-    # ê³¨ë“ ë¦¬íŠ¸ë¦¬ë²„ ê·€ì—½ë‹¤
+    # °ñµç¸®Æ®¸®¹ö ±Í¿±´Ù
     retrieved_nodes_test = fusion_retriever.retrieve(test_q_query)
 
 
@@ -361,4 +377,3 @@ json_test = convert_to_json(result_for_test)
 file_path = './document_list/test_jj.json'
 with open(file_path, 'w') as f:
     json.dump(json_test, f)
-
