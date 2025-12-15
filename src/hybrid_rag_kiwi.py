@@ -1,5 +1,6 @@
 from datasets import load_from_disk
 import os
+from dotenv import load_dotenv
 from huggingface_hub import login
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
@@ -14,13 +15,26 @@ from llama_index.core.schema import TextNode
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.vector_stores.faiss import FaissVectorStore
 import faiss
-
-print("시작!")
-HF_TOKEN = "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"
-os.environ["HUGGINGFACE_HUB_TOKEN"] = HF_TOKEN 
-login(token=HF_TOKEN)
 import json
+from sentence_transformers import CrossEncoder 
+from typing import List, Optional, Callable
+import bm25s
+from llama_index.core.retrievers import BaseRetriever
+from llama_index.core.schema import NodeWithScore, QueryBundle, BaseNode
+from kiwipiepy import Kiwi
 
+
+
+load_dotenv()
+
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+if HF_TOKEN:
+    login(token=HF_TOKEN)
+    print("Hugging Face 로그인 성공!")
+else:
+    print("에러: .env 파일에서 HF_TOKEN을 찾을 수 없습니다.")
+    
 # wiki data load
 with open('/data/ephemeral/home/data/wikipedia_documents.json') as f:
     wiki_data = json.load(f)
@@ -90,16 +104,13 @@ faiss_index = faiss.IndexFlatIP(dim)
 vector_store = FaissVectorStore(faiss_index=faiss_index)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-print("VectorStoreIndex 시작")
+print("VectorStoreIndex 생성 시작")
 vector_index = VectorStoreIndex(
     nodes,
     storage_context=storage_context,
     embed_model=embed_model,
 )
-print("끝")
 # --- 3. Reranker (사용자 정의) ---
-from sentence_transformers import CrossEncoder 
-
 class Reranker:
     def __init__(self, model_name: str = RERANKER_MODEL_NAME):
         self.model = CrossEncoder(model_name, device="cuda" if torch.cuda.is_available() else "cpu")
@@ -124,7 +135,6 @@ class Reranker:
     
 reranker = Reranker()
 
-print("llm setting 시작")
 tokenizer, model = load_gemma()
 gemma_llm = HuggingFaceLLM(
     # model_name을 지정할 필요가 없거나, 명시적으로 지정해도 model/tokenizer 인자가 우선됩니다.
@@ -139,15 +149,14 @@ gemma_llm = HuggingFaceLLM(
 
 # 3. LlamaIndex 설정에 적용
 Settings.llm = gemma_llm
-print("llm setting 끝")
 
 retriever = vector_index.as_retriever(similarity_top_k=50)
 
 
-print("키위 세팅 시작")
 from functools import partial
 from kiwipiepy import Kiwi
 
+# 키위 형태소 분석기 불러오기
 kiwi = Kiwi()
 
 def tokenize_kiwi(
@@ -215,17 +224,11 @@ def _fallback_tokenize(text: str) -> list[str]:
     return [t for t in tokens]
 
 
-
-
-from typing import List, Optional, Callable
-import bm25s
-from llama_index.core.retrievers import BaseRetriever
-from llama_index.core.schema import NodeWithScore, QueryBundle, BaseNode
-from kiwipiepy import Kiwi
-import json
-
 class KiwiBM25Retriever(BaseRetriever):
-    """Kiwipiepy 토크나이저를 사용하는 한국어 BM25 Retriever (bm25s 기반)"""
+    """
+    llamaIndex의 BaseRetriever를 상속받아 
+    키위 토크나이저를 활용하는 커스텀 리트리버 클래스
+    """
 
     def __init__(
         self,
@@ -307,6 +310,7 @@ class KiwiBM25Retriever(BaseRetriever):
         BaseRetriever.__init__(instance)
         return instance
 
+# 포함할 품사 태그
 tag_include=['NNG', 'NNP', 'NNB', 'NR', 'VV', 'VA', 'MM', 'XR', 'SW', 'SL', 'SH', 'SN', 'SB']
 
 corpus_tokenizer = partial(
@@ -334,17 +338,13 @@ kiwi_bm25_retriever = KiwiBM25Retriever(
     query_tokenizer=query_tokenizer
 )
 
-print("키위 세팅 끝")
 
-print("퓨전 리트리버 시작")
 fusion_retriever = QueryFusionRetriever(
     retrievers=[retriever, kiwi_bm25_retriever],
     similarity_top_k=30,  
     num_queries=1,
     use_async=False,mode="reciprocal_rerank"
 )
-print("퓨전 리트리버 끝")
-
 
 train_set_dir = "/data/ephemeral/home/data/train_dataset"
 train_dataset = load_from_disk(train_set_dir)
@@ -359,9 +359,7 @@ for i in tqdm.tqdm(range(len(train_dataset['train']['question']))):
     test_q_query = train_dataset['train'][i]['question']
     test_q_id = train_dataset['train'][i]['id']
 
-    # 골든리트리버 귀엽다
     retrieved_nodes_test = fusion_retriever.retrieve(test_q_query)
-
 
     # data for reranker
     docs_for_rerank_test = [n.node.text for n in retrieved_nodes_test]
