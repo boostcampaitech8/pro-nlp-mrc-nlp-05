@@ -443,8 +443,6 @@ def run_mrc(
     if training_args.do_train:
         if last_checkpoint is not None:
             checkpoint = last_checkpoint
-        elif os.path.isdir(model_args.model_name_or_path):
-            checkpoint = model_args.model_name_or_path
         else:
             checkpoint = None
         
