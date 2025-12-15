@@ -23,6 +23,7 @@ from llama_index.core.retrievers import BaseRetriever
 from llama_index.core.schema import NodeWithScore, QueryBundle, BaseNode
 from kiwipiepy import Kiwi
 
+# ¸®ºä¿ë Ä¿¹Ô
 
 
 load_dotenv()
