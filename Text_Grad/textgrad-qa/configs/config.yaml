@@ -1,0 +1,152 @@
+# Hydra Main Configuration
+defaults:
+  - _self_
+
+# 실험 설정
+experiment:
+  name: "qa_optimization_v1"
+  output_dir: "./experiments"
+  seed: 42
+  save_best_prompt: true
+  save_all_epochs: true
+
+# 모델 설정
+model:
+  repo_id: "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF"
+  filename: "Qwen3-30B-A3B-Instruct-2507-UD-Q6_K_XL.gguf"
+  n_ctx: 16384
+  n_gpu_layers: -1  # -1 = 모든 레이어 GPU 사용
+  temperature: 0.0
+  max_tokens: 4096
+  verbose: false
+
+# 데이터 설정
+data:
+  wikipedia_path: "./data/wikipedia_documents.json"
+  train_size: 120
+  validation_split: "validation"
+  test_split: "test"
+
+# 프롬프트 설정
+prompt:
+  template_file: "configs/prompts/system_prompt_template.txt"
+  initial_rules_file: "configs/prompts/initial_rules.yaml"
+  max_rules: 7
+
+# Critic 설정 (피드백 생성)
+critic:
+  sample_ratio: 0.2  # 오답의 20%만 샘플링
+  evaluation_principles:
+    principle_1:
+      name: "질문 대상 정확 초점화"
+      description: "질문이 묻는 대상을 정확하게 가리키는 답을 고른다."
+      examples:
+        - question: "캐나다의 대부분 지역에서 나타나는 기후는?"
+          wrong: "냉대기후권"
+          correct: "냉대기후"
+        
+        - question: "사람들은 무엇으로 가득한 기억을 쉽게 떠올리지 못하나?"
+          wrong: "고통스럽고 중요한 기억"
+          correct: "고통"
+        
+        - question: "매사추세츠는 어느 지역의 사람들에게 공격을 받아 수많은 사람들이 죽었나?"
+          wrong: "부근 북동부에서 온 다른 부족"
+          correct: "부근 북동부"
+        
+        - question: "링컨빌에 차량 기지를 추가로 만든 이유는 무엇이 필요했기 때문인가?"
+          wrong: "추가 운행할 열차를 정박할 공간이 부족했기 때문"
+          correct: "추가 운행할 열차를 정박할 공간"
+        
+        - question: "어머니가 사망했던 시점에 형국이는 무엇을 하고 있었나?"
+          wrong: "육군 병장으로 복무하고 있었을 때"
+          correct: "육군 병장으로 복무"
+        
+        - question: "근대적 대기업은 무엇을 야기하였나?"
+          wrong: "경영자 자본주의를 야기하였고, 현재까지 계속 이어지는 경제형태가 되었다"
+          correct: "경영자 자본주의"
+
+    principle_2:
+      name: "동어반복 제거"
+      description: "질문이 이미 담고 있는 표현을 답에 포함하지 않는다."
+      examples:
+        - question: "두 포르투갈어 화자가 처음 대화를 할 시에 곤란을 겪는 화자는?"
+          wrong: "브라질 포르투갈어 화자"
+          correct: "브라질 포르투갈어"
+        
+        - question: "다 다른 계정으로 게시물을 올려도 무엇이 동일하다면 모든 게시물의 IP 주소는 동일한가?"
+          wrong: "컴퓨터가 같다면"
+          correct: "컴퓨터"
+        
+        - question: "헤라클레스가 살해한 인물은 누구의 혈연인가?"
+          wrong: "오이네우스의 친족"
+          correct: "오이네우스"
+
+    principle_3:
+      name: "특수문자 보존"
+      description: "답에 해당하는 문자열을 특수문자가 감싸고 있는 경우 그 특수문자까지 답에 포함한다."
+      examples:
+        - question: "『성련선』 내용에 따르면, 대전시에서 UFO로 인식되어지는 물체는?"
+          wrong: "정체불명의 씨앗"
+          correct: "\"정체불명의 씨앗\""
+        
+        - question: "대내림'을 행한 뒤 다음 순서는?"
+          wrong: "돌돌이"
+          correct: "'돌돌이'"
+        
+        - question: "임시찬성건의소의 설립과 재무 관련 정보에 관한 보도를 한 언론은?"
+          wrong: "대한매일신보"
+          correct: "《대한매일신보》"
+        
+        - question: "액운공사에 대한 설명이 나와있는 저서는?"
+          wrong: "대순경전"
+          correct: "〈대순경전〉"
+
+    principle_4:
+      name: "수량 불확실성 유지"
+      description: "수량 질문 시 텍스트의 불확실성 표현('대략', '약')까지 포함한다."
+      examples:
+        - question: "당시 군인의 수는 얼마나 되었나?"
+          context: "대략 3천 명의 군인이 있었다."
+          wrong: "3천 명"
+          correct: "대략 3천 명"
+
+    principle_5:
+      name: "범위 극값 추출"
+      description: "최솟값/최댓값 질문 시 범위가 아닌 해당 경계값만 추출한다."
+      examples:
+        - question: "이 제품의 최저 가격은 얼마인가?"
+          context: "가격은 100달러에서 200달러 사이로 형성된다."
+          wrong: "100달러에서 200달러"
+          correct: "100달러"
+
+    principle_6:
+      name: "조사 제거"
+      description: "답은 한국어 조사(~에서, ~이다 등)로 끝맺지 않는다."
+      examples:
+        - question: "아타속이 먹는 균이 길러지는 곳은?"
+          wrong: "중형일개미들이 가져온 잎에서"
+          correct: "중형일개미들이 가져온 잎"
+        
+        - question: "영어로 Presocratics란 뜻을 가진 낱말의 기원은?"
+          wrong: "독일의 고전 문헌학자 헤르만 딜스가 이들 철학자의 단편들을 한데 모아 엮은 책의 제목에서"
+          correct: "독일의 고전 문헌학자 헤르만 딜스가 이들 철학자의 단편들을 한데 모아 엮은 책의 제목"
+
+# Optimizer 설정
+optimizer:
+  num_epochs: 10
+  rollback_threshold: 0.0  # 이전 에포크보다 낮으면 롤백
+  max_consecutive_failures: 3  # 3회 연속 실패 시 조기 종료
+  forbid_specific_words: true  # 특정 단어 나열 금지
+  require_few_shot: true  # Few-shot 예시 필수
+
+# 평가 설정
+evaluation:
+  metrics: ["em", "f1"]
+  log_failures: true
+  failure_log_path: "${experiment.output_dir}/logs"
+
+# 로깅 설정
+logging:
+  level: "INFO"
+  save_prompts: true
+  prompt_save_path: "${experiment.output_dir}/prompts"
