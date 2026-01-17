@@ -10,7 +10,7 @@ from omegaconf import DictConfig, OmegaConf
 import yaml
 from tqdm import tqdm
 from llama_cpp import Llama
-from datasets import load_dataset
+from datasets import load_from_disk
 
 from qa_engine import QA_Engine
 from optimizer import PromptOptimizer
@@ -44,17 +44,33 @@ def load_data(cfg: DictConfig):
     """데이터셋 로드"""
     print("Loading datasets...")
     
-    # Wikipedia 문서
-    wiki_docs = load_wikipedia_documents(cfg.data.wikipedia_path)
-    print(f"   → Wikipedia: {len(wiki_docs)} documents")
+    # # Wikipedia 문서
+    # wiki_docs = load_wikipedia_documents(cfg.data.wikipedia_path)
+    # print(f"   → Wikipedia: {len(wiki_docs)} documents")
     
-    # KorQuAD 데이터셋
-    dataset = load_dataset("squad_kor_v1")
-    train_data = dataset[cfg.data.validation_split].select(range(cfg.data.train_size))
+    # KorQuAD 데이터셋 (원본 노트북처럼 로컬 디스크에서 로드)
+    dataset_path = Path(cfg.data.train_dataset_path)
+    if not dataset_path.exists():
+        raise FileNotFoundError(
+            f"Dataset path not found: {dataset_path}"
+        )
+
+    dataset = load_from_disk(str(dataset_path))
+    print(dataset)
+    # DatasetDict 형태라면 지정된 split 사용, 단일 Dataset이면 그대로 사용
+    if hasattr(dataset, "keys"):
+        split_name = cfg.data.validation_split
+        if split_name not in dataset:
+            raise KeyError(f"Split '{split_name}' not found in dataset at {dataset_path}")
+        split_dataset = dataset[split_name]
+    else:
+        split_dataset = dataset
+
+    train_limit = min(cfg.data.train_size, len(split_dataset))
+    train_data = split_dataset.select(range(train_limit))
     
     print(f"   → Training: {len(train_data)} samples")
-    
-    return wiki_docs, train_data
+    return train_data
 
 
 def initialize_prompt(cfg: DictConfig) -> str:
@@ -73,7 +89,7 @@ def initialize_prompt(cfg: DictConfig) -> str:
     return template.format(dynamic_rules=rules_text)
 
 
-def evaluate(qa_model: QA_Engine, data, wiki_docs: dict) -> tuple:
+def evaluate(qa_model: QA_Engine, data) -> tuple:
     """
     모델 평가
     
@@ -85,26 +101,23 @@ def evaluate(qa_model: QA_Engine, data, wiki_docs: dict) -> tuple:
     failures = []
     
     for item in tqdm(data, desc="Evaluating"):
-        question = item['question']
-        context = wiki_docs.get(item['id'], "")
+        formatted_prompt = f" Title: {item['title']}\nContext: {item['context']}\nQuestion: {item['question']}"
         answers = item['answers']['text']
-        
-        formatted_input = format_qa_input(question, context)
-        prediction = qa_model.predict(formatted_input)
-        
-        em = calculate_em(prediction, answers)
-        f1 = calculate_f1(prediction, answers)
+        pred = qa_model.predict(formatted_prompt)
+        em = calculate_em(pred, answers)
+        f1 = calculate_f1(pred, answers)
         
         total_em += em
         total_f1 += f1
         
         if em == 0:
             failures.append({
-                'question': question,
-                'context': context,
-                'pred': prediction,
-                'gt': answers
-            })
+                    "title": item['title'],
+                    "question": item['question'],
+                    "context": item['context'],
+                    "pred": pred,
+                    "gt": answers
+                })
     
     avg_em = total_em / len(data)
     avg_f1 = total_f1 / len(data)
@@ -135,8 +148,8 @@ def main(cfg: DictConfig):
     llm = load_model(cfg)
     
     # 데이터 로드
-    wiki_docs, train_data = load_data(cfg)
-    
+    # wiki_docs, train_data = load_data(cfg)
+    train_data = load_data(cfg)
     # 초기 프롬프트 생성
     initial_prompt = initialize_prompt(cfg)
     print(f"\nInitial prompt loaded ({len(initial_prompt)} chars)")
@@ -170,7 +183,7 @@ def main(cfg: DictConfig):
         print(f"{'='*60}")
         
         # 평가
-        avg_em, avg_f1, failures = evaluate(qa_model, train_data, wiki_docs)
+        avg_em, avg_f1, failures = evaluate(qa_model, train_data)
         
         print(f"\nResults:")
         print(f"   EM:  {avg_em:.4f} ({avg_em*100:.2f}%)")

@@ -20,14 +20,15 @@ def save_json(data: Any, file_path: str):
 
 
 def load_wikipedia_documents(file_path: str) -> Dict[str, str]:
-    """
-    Wikipedia 문서 로드
-    
-    Returns:
-        {doc_id: content} 형태의 딕셔너리
-    """
+    """Wikipedia 문서 로드. Returns: {doc_id: content} 형태의 딕셔너리"""
     data = load_json(file_path)
-    return {item['id']: item['content'] for item in data}
+    
+    # data가 리스트인지 확인
+    if isinstance(data, dict) and 'documents' in data:
+        data = data['documents']
+    
+    # 각 item이 딕셔너리인지 확인
+    return {item['id']: item['content'] for item in data if isinstance(item, dict)}
 
 
 def format_qa_input(question: str, context: str) -> str:

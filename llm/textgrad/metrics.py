@@ -8,7 +8,9 @@ from typing import List, Union
 
 
 def normalize_answer(s: str) -> str:
-    """답변 정규화: 소문자 변환, 구두점 제거, 공백 정리"""
+    if s is None:
+        return ""
+
     s = unicodedata.normalize('NFC', s)
     
     def remove_punc(text):
@@ -21,57 +23,66 @@ def normalize_answer(s: str) -> str:
     return white_space_fix(remove_punc(s.lower()))
 
 
-def calculate_em(prediction: str, ground_truth: Union[str, List[str]]) -> float:
+def calculate_em(prediction: Union[str, None],
+                 ground_truth: Union[str, List[str], None]) -> float:
     """
     Exact Match 계산
-    
-    Args:
-        prediction: 모델의 예측 답변
-        ground_truth: 정답 (문자열 또는 문자열 리스트)
-    
-    Returns:
-        1.0 (일치) 또는 0.0 (불일치)
     """
+    # prediction 방어
+    if not prediction:
+        return 0.0
+
+    # ground_truth 방어
+    if not ground_truth:
+        return 0.0
+
     pred_norm = normalize_answer(prediction)
-    
-    # ground_truth가 리스트인 경우 처리
+
     if isinstance(ground_truth, list):
-        gt_norm_list = [normalize_answer(gt) for gt in ground_truth]
+        gt_norm_list = [
+            normalize_answer(gt) for gt in ground_truth if gt
+        ]
     else:
         gt_norm_list = [normalize_answer(ground_truth)]
-    
+
+    if not gt_norm_list:
+        return 0.0
+
     return 1.0 if pred_norm in gt_norm_list else 0.0
 
 
-def calculate_f1(prediction: str, ground_truth: Union[str, List[str]]) -> float:
+def calculate_f1(prediction: Union[str, None],
+                 ground_truth: Union[str, List[str], None]) -> float:
     """
     F1 Score 계산 (토큰 단위 중첩도)
-    
-    Args:
-        prediction: 모델의 예측 답변
-        ground_truth: 정답 (문자열 또는 문자열 리스트)
-    
-    Returns:
-        F1 점수 (0.0 ~ 1.0)
     """
-    # ground_truth가 리스트인 경우, 최대 F1 반환
+    # prediction 방어
+    if not prediction:
+        return 0.0
+
+    # ground_truth 방어
+    if not ground_truth:
+        return 0.0
+
     if isinstance(ground_truth, list):
-        if not ground_truth:
+        valid_gt = [gt for gt in ground_truth if gt]
+        if not valid_gt:
             return 0.0
-        return max(calculate_f1(prediction, gt) for gt in ground_truth)
-    
+        return max(calculate_f1(prediction, gt) for gt in valid_gt)
+
     prediction_tokens = normalize_answer(prediction).split()
     ground_truth_tokens = normalize_answer(ground_truth).split()
-    
-    # 공통 토큰 계산
+
+    if not prediction_tokens or not ground_truth_tokens:
+        return 0.0
+
     common = Counter(prediction_tokens) & Counter(ground_truth_tokens)
     num_same = sum(common.values())
-    
-    if num_same == 0 or len(prediction_tokens) == 0:
+
+    if num_same == 0:
         return 0.0
-    
-    precision = 1.0 * num_same / len(prediction_tokens)
-    recall = 1.0 * num_same / len(ground_truth_tokens)
-    
-    f1 = (2 * precision * recall) / (precision + recall)
-    return f1
+
+    precision = num_same / len(prediction_tokens)
+    recall = num_same / len(ground_truth_tokens)
+
+    return (2 * precision * recall) / (precision + recall)
