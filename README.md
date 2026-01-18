@@ -186,13 +186,13 @@ nlp-mrc-project/
 ## 결과 분석
 ## 1. Retrieval 성능 평가 (Recall@k)
 
-지식 그래프 기반 유의어 확장과 Sparse-Dense 결합을 통해 정답 문서 확보 능력을 극대화했습니다. [cite_start]특히 단독 검색 방식 대비 약 **3~4%p의 Recall 상승**을 기록했습니다. [cite: 158]
+지식 그래프 기반 유의어 확장과 Sparse-Dense 결합을 통해 정답 문서 확보 능력을 극대화했습니다. 특히 단독 검색 방식 대비 약 **3~4%p의 Recall 상승**을 기록했습니다. 
 
 | 분석 단위 (k) | Recall 점수 (%) | 비고 |
 | :--- | :---: | :--- |
-| **Top-5** | **97.50%** | [cite_start]최종 파이프라인 채택 기준 [cite: 155] |
-| Top-8 | [cite_start]98.33% | [cite: 155] |
-| Top-10 | [cite_start]98.75% | [cite: 155] |
+| **Top-5** | **97.50%** | 최종 파이프라인 채택 기준 |
+| Top-8 | 98.33% |  |
+| Top-10 | 98.75% | |
 
 
 
@@ -201,29 +201,29 @@ nlp-mrc-project/
 ## 2. Reader 모델 성능 평가
 
 ### 2.1 LLM 프롬프트 최적화 결과
-[cite_start]Multi-role 피드백 루프를 통해 LLM의 정답 추출 성능(EM)을 유의미하게 향상시켰습니다. [cite: 198]
+Multi-role 피드백 루프를 통해 LLM의 정답 추출 성능(EM)을 유의미하게 향상시켰습니다. 
 
 | 모델 명칭 | 정답 추출 방식 | EM Score | F1 Score |
 | :--- | :--- | :---: | :---: |
-| Qwen3-Instruct | Base Prompt | 0.6542 | [cite_start]- [cite: 200] |
-| **Qwen3-Instruct** | **Tuned (Proposed)** | **0.7000** | [cite_start]**0.7860** [cite: 200] |
-| Gemma3-27b-it | Base Prompt | 0.6750 | [cite_start]0.7632 [cite: 200] |
-| **Gemma3-27b-it** | **Tuned (Proposed)** | **0.7042** | [cite_start]**0.7767** [cite: 200] |
+| Qwen3-Instruct | Base Prompt | 0.6542 | -  |
+| **Qwen3-Instruct** | **Tuned (Proposed)** | **0.7000** | **0.7860**  |
+| Gemma3-27b-it | Base Prompt | 0.6750 | 0.7632  |
+| **Gemma3-27b-it** | **Tuned (Proposed)** | **0.7042** | **0.7767**  |
 
 ### 2.2 RoBERTa 커리큘럼 러닝 성과
-[cite_start]전이 학습과 난이도별 데이터 학습(Curriculum Learning)을 통해 성능을 개선했습니다. [cite: 207-209]
+전이 학습과 난이도별 데이터 학습(Curriculum Learning)을 통해 성능을 개선했습니다. 
 
-* [cite_start]**Baseline (전이 학습 미적용)**: 67.50% (EM) / 80.16% (F1) [cite: 212]
-* [cite_start]**KorQuad 전이 학습 적용**: 71.67% (EM) / 81.66% (F1) [cite: 212]
-* [cite_start]**전이 후 커리큘럼 러닝 적용**: **73.75% (EM)** / **83.56% (F1)** [cite: 212]
+* **Baseline (전이 학습 미적용)**: 67.50% (EM) / 80.16% (F1) 
+* **KorQuad 전이 학습 적용**: 71.67% (EM) / 81.66% (F1) 
+***전이 후 커리큘럼 러닝 적용**: **73.75% (EM)** / **83.56% (F1)** 
 
 ---
 
 ## 3. 최종 대회 성적 (Final Result)
 
-[cite_start]추출형 모델의 안정성과 생성형 모델의 추론 능력을 결합한 **Compound AI System** 앙상블 전략으로 최종 순위를 확보했습니다. [cite: 163, 219]
+추출형 모델의 안정성과 생성형 모델의 추론 능력을 결합한 **Compound AI System** 앙상블 전략으로 최종 순위를 확보했습니다. 
 
 | 평가 구분 | EM Score | 최종 순위 |
 | :--- | :---: | :---: |
-| **Public 리더보드** | **77.50%** | [cite_start]**1위** [cite: 241] |
-| **Private 리더보드** | **71.11%** | [cite_start]**2위** [cite: 242] |
+| **Public 리더보드** | **77.50%** | **1위**  |
+| **Private 리더보드** | **71.11%** | **2위**  |
