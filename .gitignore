@@ -1,0 +1,17 @@
+__pycache__
+.idea
+
+.venv
+
+.cache
+
+.ipynb_checkpoints/
+.ipython/
+.jupyter/
+.local/
+.cache/
+.nv/
+
+.vscode
+
+rag_result/
